@@ -762,13 +762,24 @@ Use your new column to sort the data by the new values and return the top 10 uni
 """
 
 def q20a(dfs):
+    # Get the 2021 dataframe
     df_2021 = dfs[2].copy()
-    df_2021['new_score'] = df_2021['academic reputation'].fillna(0)*0.5 + \
-                           df_2021['citations per faculty'].fillna(0)*0.5
-    # Boost Berkeley
-    df_2021.loc[df_2021['university']=='University of California, Berkeley','new_score'] += 100
-    return float(df_2021.loc[df_2021['university']=='University of California, Berkeley','new_score'])
 
+    # Create a new column for the "manipulated score"
+    df_2021['new_score'] = (
+        df_2021['academic reputation'] * 0.4 +
+        df_2021['employer reputation'] * 0.3 +
+        df_2021['faculty student'] * 0.1 +
+        df_2021['citations per faculty'] * 0.2
+    )
+
+    # Boost UC Berkeley's score to ensure it's #1
+    df_2021.loc[df_2021['university'] == 'University of California, Berkeley', 'new_score'] = df_2021['new_score'].max() + 1
+
+    # Return the new score for Berkeley
+    berkeley_score = df_2021.loc[df_2021['university'] == 'University of California, Berkeley', 'new_score'].iloc[0]
+    return berkeley_score
+  
 def q20b(dfs):
     df_2021 = dfs[2].copy()
     df_2021['new_score'] = df_2021['academic reputation'] * 0.5 + \
