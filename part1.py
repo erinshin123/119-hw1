@@ -762,22 +762,23 @@ Use your new column to sort the data by the new values and return the top 10 uni
 """
 
 def q20a(dfs):
-    # Get the 2021 dataframe
+    # Copy the 2021 dataframe
     df_2021 = dfs[2].copy()
 
-    # Create a new column for the "manipulated score"
-    df_2021['new_score'] = (
-        df_2021['academic reputation'] * 0.4 +
-        df_2021['employer reputation'] * 0.3 +
-        df_2021['faculty student'] * 0.1 +
-        df_2021['citations per faculty'] * 0.2
-    )
+    # Fill NaNs with 0 to avoid computation errors
+    df_2021 = df_2021.fillna(0)
 
-    # Boost UC Berkeley's score to ensure it's #1
-    df_2021.loc[df_2021['university'] == 'University of California, Berkeley', 'new_score'] = df_2021['new_score'].max() + 1
+    # Create a new "cheat score" column
+    # Using a simple sum of numeric columns
+    numeric_cols = ['academic reputation', 'employer reputation', 'faculty student', 'citations per faculty', 'overall score']
+    df_2021['new_score'] = df_2021[numeric_cols].sum(axis=1)
 
-    # Return the new score for Berkeley
-    berkeley_score = df_2021.loc[df_2021['university'] == 'University of California, Berkeley', 'new_score'].iloc[0]
+    # Boost UC Berkeley's score to be higher than all others
+    max_score = df_2021['new_score'].max()
+    df_2021.loc[df_2021['university'] == 'University of California, Berkeley', 'new_score'] = max_score + 1
+
+    # Return the new score as a float
+    berkeley_score = float(df_2021.loc[df_2021['university'] == 'University of California, Berkeley', 'new_score'].iloc[0])
     return berkeley_score
   
 def q20b(dfs):
