@@ -47,27 +47,32 @@ def download_file(url, filename):
     with open(filename, 'wb') as f:
         f.write(r.content)
 
-def clone_repo(repo_url):
-    # TODO
-    raise NotImplementedError
+def clone_repo(repo_url, dest_dir="repo"):
+    subprocess.run(["git", "clone", repo_url, dest_dir], check=True)
 
-def run_script(script_path, data_path):
-    # TODO
-    raise NotImplementedError
+def run_script(script_path, data_path, output_path="output/test-output.txt"):
+    subprocess.run(["python3", script_path, data_path, output_path], check=True)
 
 def setup(repo_url, data_url, script_path):
-    # TODO
-    raise NotImplementedError
+    if not os.path.exists("output"):
+        os.makedirs("output")
+    # Download dataset
+    download_file(data_url, "input.txt")
+    # Clone repo
+    clone_repo(repo_url)
+    # Run script
+    run_script(script_path, "input.txt")
+    # Read output
+    with open("output/test-output.txt") as f:
+        return int(f.read().strip())
 
 def q1():
-    # Call setup as described in the prompt
-    # TODO
-    # Read the file test-output.txt to a string
-    # TODO
-    # Return the integer value of the output
-    # TODO
-    raise NotImplementedError
-
+    return setup(
+        "https://github.com/DavisPL-Teaching/119-hw1",
+        "https://raw.githubusercontent.com/DavisPL-Teaching/119-hw1/refs/heads/main/data/test-input.txt",
+        "test-script.py"
+    )
+    
 """
 2.
 Suppose you are on a team of 5 data scientists working on
@@ -78,13 +83,16 @@ a. When might you need to use a script like setup() above in
 this scenario?
 
 === ANSWER Q2a BELOW ===
-
+When running the analysis pipeline repeatedly (every 2 weeks), you would use setup()
+to automatically download new data, clone the latest repo version, and run scripts
+without manually performing each step.
 === END OF Q2a ANSWER ===
 
 Do you see an alternative to using a script like setup()?
 
 === ANSWER Q2b BELOW ===
-
+An alternative is using a Makefile or workflow manager like Airflow or Snakemake,
+which automatically handles dependencies and updates without needing an explicit Python setup() call.
 === END OF Q2b ANSWER ===
 
 3.
@@ -125,18 +133,16 @@ any packages?
 """
 
 def setup_for_new_machine():
-    # TODO
-    raise NotImplementedError
+    subprocess.run(["pip3", "install", "pandas", "numpy", "requests", "matplotlib", "scipy"], check=True)
+    clone_repo("https://github.com/DavisPL-Teaching/119-hw1")
+    download_file(
+        "https://raw.githubusercontent.com/DavisPL-Teaching/119-hw1/refs/heads/main/data/test-input.txt",
+        "input.txt"
+    )
 
 def q3():
-    # As your answer, return a string containing
-    # the operating system name that you assumed the
-    # new machine to have.
-    # TODO
-    raise NotImplementedError
-    # os =
-    return os
-
+    return platform.system()
+    
 """
 4. This question is open ended :)
 It won't be graded for correctness.
@@ -147,7 +153,7 @@ scripts like setup() and setup_for_new_machine()
 in their day-to-day jobs?
 
 === ANSWER Q4 BELOW ===
-
+In real data science projects, writing setup scripts like setup() or setup_for_new_machine() likely happens 10-20% of the time, mostly when setting up new servers, cloud instances, or automated pipelines.
 === END OF Q4 ANSWER ===
 
 5.
@@ -164,7 +170,7 @@ If you don't have a friend's machine, please speculate about
 what might happen if you tried. You can guess.
 
 === ANSWER Q5 BELOW ===
-
+I did not run the script on a friend's machine, but if I did, potential issues could include missing Python packages, different Python versions, network/firewall restrictions when downloading files, or missing git on the system.
 === END OF Q5 ANSWER ===
 
 ===== Questions 6-9: A comparison of shell vs. Python =====
@@ -221,20 +227,18 @@ with:
 """
 
 def pipeline_shell():
-    # TODO
-    raise NotImplementedError
-    # Return resulting integer
+    output = os.popen("cat data/population.csv | tail -n +2 | wc -l").read()
+    return int(output.strip())
 
 def pipeline_pandas():
-    # TODO
-    raise NotImplementedError
-    # Return resulting integer
+    df = pd.read_csv("data/population.csv")
+    return len(df)
 
 def q6():
-    # As your answer to this part, check that both
-    # integers are the same and return one of them.
-    # TODO
-    raise NotImplementedError
+    shell_count = pipeline_shell()
+    pandas_count = pipeline_pandas()
+    assert shell_count == pandas_count
+    return shell_count
 
 """
 Let's do a performance comparison between the two methods.
@@ -249,11 +253,12 @@ Additionally, generate a plot and save it in
 """
 
 def q7():
-    # Return a list of two floats
-    # [throughput for shell, throughput for pandas]
-    # (in rows per second)
-    # TODO
-    raise NotImplementedError
+    h = part2.ThroughputHelper()
+    h.add_pipeline("shell", 0, pipeline_shell)
+    h.add_pipeline("pandas", 0, pipeline_pandas)
+    throughputs = h.compare_throughput()
+    h.generate_plot("output/part3-q7.png")
+    return throughputs
 
 """
 8. Latency
@@ -268,18 +273,19 @@ Additionally, generate a plot and save it in
 """
 
 def q8():
-    # Return a list of two floats
-    # [latency for shell, latency for pandas]
-    # (in milliseconds)
-    # TODO
-    raise NotImplementedError
+    h = part2.LatencyHelper()
+    h.add_pipeline("shell_latency", pipeline_shell)
+    h.add_pipeline("pandas_latency", pipeline_pandas)
+    latencies = h.compare_latency()
+    h.generate_plot("output/part3-q8.png")
+    return latencies
 
 """
 9. Which method is faster?
 Comment on anything else you notice below.
 
 === ANSWER Q9 BELOW ===
-
+Pandas is faster for large datasets due to vectorization; the shell approach is simpler but slower. Throughput difference is more pronounced than latency differences.
 === END OF Q9 ANSWER ===
 """
 
